@@ -11,7 +11,8 @@
 
 # define no_of_d_chunk 4
 # define no_of_p_chunk 3
-
+# define storage "EC_Storage"
+# define chunk "data_chunk"
 
 
 struct fileinfo st[50];
@@ -101,6 +102,7 @@ char *get_uid_data(long int unique_ID,struct fileinfo st[]){
          return st[i].file_name;
       }
    }
+   
 }
 
 void get(){
@@ -117,7 +119,7 @@ void get(){
    char *file_name;
    file_name = get_uid_data(unique_f_ID,st);
    
-   
+ 
    if(file_name){
      
      
@@ -134,7 +136,7 @@ void get(){
          
          // getting path of file from unique_ID
          char f_path[80];
-         sprintf(f_path, "/home/vaibhavi/Desktop/EC_store/EC_/EC_Storage/data_chunk_%d/_%ld_",i,unique_f_ID);
+         sprintf(f_path, "%s/%s_%d/_%ld_",storage,chunk,i,unique_f_ID);
       
          // opening the file
          int fp1 = open(f_path,O_RDONLY);
@@ -151,26 +153,40 @@ void get(){
     	  close(fp1);
     	  close(op_file);
     	  } 
+    	  else{
+    	       printf("Chunk not found !!\n");
+    	       break;
+    	  }
    
       }
+      printf("Object retrieved successfully !!\n");
+      
+      
       
    }
-      
+   else{
+      printf("Object with ID %ld does not exist\n",unique_f_ID);
+   }   
 }
 
 
 
 void list(){
  
-    printf("unique_id       file name       filesize\n\n");
-    
-    for(int i=0;i<record_count;i++){
-    
-       printf("%ld\t\t",st[i].unique_id);
-       printf("%s\t\t",st[i].file_name);
-       printf("%d\n",st[i].file_size);
-       
-    }
+    if(record_count>0){
+	    printf("unique_id       file name       filesize\n\n");
+	    
+	    for(int i=0;i<record_count;i++){
+	    
+	       printf("%ld\t\t",st[i].unique_id);
+	       printf("%s\t\t",st[i].file_name);
+	       printf("%d bytes\n",st[i].file_size);
+	       
+	    }
+   }
+   else{
+       printf("List is empty !!\n");
+   }
 }
 
 
