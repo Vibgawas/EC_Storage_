@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <ctype.h>
 #include <dirent.h>
 #include "helper.h"
 
@@ -47,7 +48,6 @@ long int findSize(char file_name[])
 
 	// checking if the file exist or not
 	if (fp == -1) {
-		printf("File Not Found!\n");
 		return -1;
 	}
 
@@ -79,7 +79,7 @@ char* getFileNameFromPath(char* path, char c)
     }
     
     
-void get_folder(int no_of_d_chunk,int no_of_p_chunk){
+void get_storage(int no_of_d_chunk,int no_of_p_chunk){
         
         char fn[50];
         mkdir("EC_Storage",0777);
@@ -107,6 +107,31 @@ void clear_struct(struct fileinfo st[]){
      }
 }
 
+int readline(char* cmd){
+   
+   if (strcmp(toLower(cmd),"put")==0){
+      return 0;
+   }
+   else if (strcmp(toLower(cmd),"get")==0){
+      return 1;
+   }
+   else if (strcmp(toLower(cmd),"list")==0){
+      return 2;
+   }
+   else if (strcmp(toLower(cmd),"quit")==0){
+      return 3;
+   }
+   else{
+      return -1;
+   }
+  
+}
+
+
+char* toLower(char* s) {
+  for(char *p=s; *p; p++) *p=tolower(*p);
+  return s;
+}
 
 
 

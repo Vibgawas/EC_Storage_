@@ -9,60 +9,73 @@
 #include "helper.h"
 
 
-# define no_of_d_chunk 4
-# define no_of_p_chunk 3
-# define storage "EC_Storage"
-# define chunk "data_chunk"
+#define NO_OF_D_CHUNK 4  
+#define NO_OF_P_CHUNK 3
+#define STORAGE "EC_Storage"
+#define CHUNK "data_chunk"
+#define MAX_RECORDS 50
+
+// Error code
+#define SUCCESS 0
+#define CHUNK_NOT_FOUND 1
+#define FILE_DOES_NOT_EXIST 2
+#define FILE_NOT_FOUND 3
+#define FILE_IS_EMPTY 4
+#define STORAGE_IS_FULL 5
+
+struct fileinfo st[MAX_RECORDS];
+int record_count = 0;  // check condition for records
 
 
-struct fileinfo st[50];
-int record_count = 0;
 
-
-
-void put(long int file_ID){
-
+int put(long int file_ID, char* path){
+    
+    if(record_count>=MAX_RECORDS){
+    
+      return STORAGE_IS_FULL;
+    }
+    
     int segments, i, len, accum;
     char *file_ex;
     char *file_name;
     
-    // taking file path from user 
-    char path[100];
-    scanf("%s",path);
     
-    // calculating file size
-    long int file_size = findSize(path);
+    // Opening the file in read mode
+    int fp1 = open(path, O_RDONLY);
     
-
     // checking if the file exist or not
-    if (file_size != -1)
+    if (fp1)
     {
 
-	    // getting size of each chunk
-	    segments = get_chunk_size(file_size/no_of_d_chunk);
-	    //printf("%d",segments);
-	    
-	    
-	    int bytesreader;
-	    char smallFileName[segments];
-	    unsigned char buffer[segments];
-
-	    // Opening the file in read mode
-	    int fp1 = open(path, O_RDONLY);
-	    if(fp1)
+            // calculating file size
+            long int file_size = findSize(path);
+            
+            if(file_size != -1)
 	    {
+	        // getting size of each chunk
+	        segments = get_chunk_size(file_size/NO_OF_D_CHUNK);
+	    
+	        //printf("%d",segments);
+	    
+	    
+	        int bytesreader;
+	        char smallFileName[segments];
+	        unsigned char buffer[segments];
+
+	    
+	    
 	        // checking if EC_Storage directory present or not
-	        DIR* dir = opendir("EC_Storage");
+	        DIR* storage = opendir("EC_Storage");
     
-		if(!dir){
-		       get_folder(no_of_d_chunk,no_of_p_chunk);
+		if(!storage){
+		       get_storage(NO_OF_D_CHUNK,NO_OF_P_CHUNK);
 		}
 		
-		for(i=1;i<=(no_of_d_chunk);i++)
+		for(i=1;i<=(NO_OF_D_CHUNK);i++)
 		{
 		    // checking for extra or less no of bytes remaining for last chunk
-		    if(i==no_of_d_chunk){
-		       segments = (file_size-(segments*(no_of_d_chunk-1)));
+		    if(i==NO_OF_D_CHUNK){
+		       segments = (file_size-(segments*(NO_OF_D_CHUNK-1)));
 		    }
 		   
 		    bytesreader = read(fp1,buffer,segments);
@@ -78,19 +91,31 @@ void put(long int file_ID){
 		    close(fp2);
 		      
 		}
-		printf("%ld\n",file_ID);
+		
+		// Closing the file
+	        close(fp1);
+	    
+               // extracting name of file with extension
+               file_name = getFileNameFromPath(path,'/');
+      
+               // storing file data into structure 
+               insert_data(file_ID,file_name,file_size,st);
+      
+               record_count++;
+            
+               return SUCCESS;
 	    }
-	    // Closing the file
-	    close(fp1);
+	    else{
+	       return FILE_IS_EMPTY;
+	    }
+	       	    
+      }
+      else{
+          
+          return FILE_NOT_FOUND;
       }
       
-      // extracting name of file with extension
-      file_name = getFileNameFromPath(path,'/');
-      
-      // storing file data into structure 
-      insert_data(file_ID,file_name,file_size,st);
-      
-      record_count++;
+
 }
 
 char *get_uid_data(long int unique_ID,struct fileinfo st[]){
@@ -102,26 +127,20 @@ char *get_uid_data(long int unique_ID,struct fileinfo st[]){
          return st[i].file_name;
       }
    }
+   return '\0';
    
 }
 
-void get(){
+int get(long int unique_f_ID,char* path){
 
-   // taking unique_ID of file from user
-   long int unique_f_ID;
-   scanf("%ld",&unique_f_ID); 
    
-   // user input for file_path
-   char path[20];
-   scanf("%s",path);
    
    // checking for given unique_ID present in database or not
-   char *file_name;
+   char *file_name = '\0';
    file_name = get_uid_data(unique_f_ID,st);
    
- 
-   if(file_name){
-     
+   
+   if(file_name){  
      
      // concatinating user path and file_name extracted from database( structure )  
      strcat(path,"/");
@@ -129,14 +148,14 @@ void get(){
      
      
      
-     for(int i=1;i<=no_of_d_chunk;i++){
+     for(int i=1;i<=NO_OF_D_CHUNK;i++){
      
          // file where we store concatinated data
          int op_file = open(path, O_APPEND|O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
          
          // getting path of file from unique_ID
          char f_path[80];
-         sprintf(f_path, "%s/%s_%d/_%ld_",storage,chunk,i,unique_f_ID);
+         sprintf(f_path, "%s/%s_%d/_%ld_",STORAGE,CHUNK,i,unique_f_ID);
       
          // opening the file
          int fp1 = open(f_path,O_RDONLY);
@@ -154,18 +173,17 @@ void get(){
     	  close(op_file);
     	  } 
     	  else{
-    	       printf("Chunk not found !!\n");
+    	       return CHUNK_NOT_FOUND;
     	       break;
     	  }
    
       }
-      printf("Object retrieved successfully !!\n");
       
-      
-      
+      return SUCCESS;
    }
+   
    else{
-      printf("Object with ID %ld does not exist\n",unique_f_ID);
+      return FILE_DOES_NOT_EXIST;
    }   
 }
 
@@ -190,6 +208,8 @@ void list(){
 }
 
 
+
+/*https://st1.zoom.us/web_client/auydg1k/html/externalLinkPage.html?ref=https://www.intel.com/content/www/us/en/developer/articles/code-sample/intel-isa-l-erasure-code-and-recovery.html*/
 
 
 
