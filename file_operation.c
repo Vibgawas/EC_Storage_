@@ -23,17 +23,11 @@
 #define FILE_IS_EMPTY 4
 #define STORAGE_IS_FULL 5
 
-struct fileinfo st[MAX_RECORDS];
-int record_count = 0;  // check condition for records
 
+struct fileinfo* st[HASH_VAL];
 
 
 int put(long int file_ID, char* path){
-    
-    if(record_count>=MAX_RECORDS){
-    
-      return STORAGE_IS_FULL;
-    }
     
     int segments, i, len, accum;
     char *file_ex;
@@ -99,9 +93,8 @@ int put(long int file_ID, char* path){
                file_name = getFileNameFromPath(path,'/');
       
                // storing file data into structure 
-               insert_data(file_ID,file_name,file_size,st);
-      
-               record_count++;
+               insert_data(file_ID,file_name,file_size);
+     
             
                return SUCCESS;
 	    }
@@ -118,37 +111,19 @@ int put(long int file_ID, char* path){
 
 }
 
-char *get_uid_data(long int unique_ID,struct fileinfo st[]){
-
-    for(int i=0;i<record_count;i++){
-    
-      if(st[i].unique_id==unique_ID){
-      
-         return st[i].file_name;
-      }
-   }
-   return '\0';
-   
-}
 
 int get(long int unique_f_ID,char* path){
 
-   
-   
-   // checking for given unique_ID present in database or not
-   char *file_name = '\0';
-   file_name = get_uid_data(unique_f_ID,st);
-   
-   
-   if(file_name){  
-     
-     // concatinating user path and file_name extracted from database( structure )  
-     strcat(path,"/");
-     strcat(path,file_name);
-     
-     
-     
-     for(int i=1;i<=NO_OF_D_CHUNK;i++){
+    struct fileinfo* data_node;
+    data_node = getnode(unique_f_ID);
+    
+    if(data_node){
+      
+      // concatinating user path and file_name extracted from database( structure ) 
+      strcat(path,"/");
+      strcat(path,data_node->file_name);
+
+      for(int i=1;i<=NO_OF_D_CHUNK;i++){
      
          // file where we store concatinated data
          int op_file = open(path, O_APPEND|O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
@@ -172,44 +147,39 @@ int get(long int unique_f_ID,char* path){
     	  close(fp1);
     	  close(op_file);
     	  } 
+    	  
     	  else{
-    	       return CHUNK_NOT_FOUND;
-    	       break;
+    	     return CHUNK_NOT_FOUND;
+    	     break;
     	  }
    
-      }
+       }
       
-      return SUCCESS;
-   }
-   
-   else{
+      return SUCCESS;      
+      
+    }
+    else{
       return FILE_DOES_NOT_EXIST;
-   }   
+   }
 }
-
-
 
 void list(){
- 
-    if(record_count>0){
-	    printf("unique_id       file name       filesize\n\n");
-	    
-	    for(int i=0;i<record_count;i++){
-	    
-	       printf("%ld\t\t",st[i].unique_id);
-	       printf("%s\t\t",st[i].file_name);
-	       printf("%d bytes\n",st[i].file_size);
-	       
-	    }
-   }
-   else{
-       printf("List is empty !!\n");
-   }
+
+    struct fileinfo* node=NULL;
+       
+    for(int i=0;i<HASH_VAL;i++){
+            node = st[i];
+            while(node!=NULL){
+            
+                display(node);
+                node = node->next;
+            }      
+	}
 }
 
 
 
-/*https://st1.zoom.us/web_client/auydg1k/html/externalLinkPage.html?ref=https://www.intel.com/content/www/us/en/developer/articles/code-sample/intel-isa-l-erasure-code-and-recovery.html*/
+
 
 
 

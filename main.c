@@ -78,10 +78,14 @@ int main(){
                
                
          case LIST:
+         
+              printf("unique_id       file name       filesize\n\n");
               list();
               break;
               
          case QUIT:
+             // clear EC_storage
+             // clear memory 
              exit(0);
               
          default:

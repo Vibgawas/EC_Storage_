@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -10,36 +11,56 @@
 #include "helper.h"
 
 
-# define default_unique_ID 10000
+extern struct fileinfo* st[HASH_VAL]; 
 
-
-struct fileinfo st[50];
-
-void insert_data(long int unique_id,char *file_name,int file_size,struct fileinfo st[]){
-    
-    
-    int index = (int)unique_id%default_unique_ID;
-    
-    st[index].unique_id = unique_id;
-    strcpy(st[index].file_name,file_name);
-    st[index].file_size = file_size;
-   
-      
-}
-
-void get_data(struct fileinfo st[],int len){
-
-    printf("unique_id      file name    filesize\n\n");
-    
-    for(int i=0;i<2;i++){
-    
-       printf("%ld\t\t",st[i].unique_id);
-       printf("%s\t\t",st[i].file_name);
-       printf("%d\n",st[i].file_size);
+void insert_data(long int unique_id,char *file_name,int file_size){
+     int index = 0;
+     
+     index = GET_HASH_INDEX(unique_id);
+     
+     struct fileinfo* node = NULL;
+     
+     node = (struct fileinfo*) malloc(sizeof(struct fileinfo*));
+     
+     if(node!=NULL){
        
-    } 
-  
+       node->unique_id = unique_id;
+       strcpy(node->file_name,file_name);
+       node->file_size = file_size;
+       
+       if(st[index]==NULL){
+          st[index]=node;
+       }
+       else{
+          node->next = st[index];
+          st[index] = node;
+       }
+       
+     }
+     
 }
+
+void display(struct fileinfo* node){
+
+	printf("%ld\t\t",node->unique_id);
+	printf("%s\t\t",node->file_name);
+	printf("%d bytes\n",node->file_size);
+	        
+}
+
+struct fileinfo* getnode(long int unique_ID){
+
+       struct fileinfo* node=NULL;
+       
+       node = st[GET_HASH_INDEX(unique_ID)];
+       
+       while(node!=NULL && node->unique_id != unique_ID){
+            
+            node = node->next;
+       }
+       return node;   
+}
+
 
 long int findSize(char file_name[])
 {
@@ -67,7 +88,7 @@ int get_chunk_size(float num){
 }
 
 char* getFileNameFromPath(char* path, char c)
-    {
+{
        for(size_t i = strlen(path) - 1; i; i--)  
        {
             if (path[i] == c)
@@ -76,7 +97,7 @@ char* getFileNameFromPath(char* path, char c)
             }
         }
         return path;
-    }
+}
     
     
 void get_storage(int no_of_d_chunk,int no_of_p_chunk){
@@ -93,19 +114,9 @@ void get_storage(int no_of_d_chunk,int no_of_p_chunk){
       	    sprintf(fn, "EC_Storage/parity_chunk_%d", i);
             mkdir(fn,0777);
         }
-        
-             
+                   
 }
 
-
-void clear_struct(struct fileinfo st[]){
-     int len = sizeof(struct fileinfo);
-     
-     for(int i=0;i<len;i++){
-            st[i].unique_id = 0;
-	    
-     }
-}
 
 int readline(char* cmd){
    
