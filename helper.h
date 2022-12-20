@@ -2,6 +2,10 @@
 # define HASH_VAL 5 
 # define GET_HASH_INDEX(X)	((int)X % HASH_VAL) 
 
+#define DB_NAME "EC_Storage"
+#define DB_DATA_FOLDER "data_chunk"
+#define DB_PARITY_FOLDER "parity_chunk"
+
 
 struct fileinfo
 {
@@ -13,9 +17,13 @@ struct fileinfo
 
 };
 
-long int findSize(char file_name[]);
+struct fileinfo* getnode(long int unique_ID);
 
-int get_chunk_size(float num);
+
+
+long int get_file_size(char file_name[]);
+
+int get_chunk_size(int file_size, int no_of_data_chunk);
 
 char* getFileNameFromPath(char* path,char c);
 
@@ -29,5 +37,6 @@ char* toLower(char* s);
 
 void display(struct fileinfo* node);
 
-struct fileinfo* getnode(long int unique_ID);
+void clear_dir(char* path);
 
+void clear_data(char* folder_path);

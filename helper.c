@@ -11,6 +11,10 @@
 #include "helper.h"
 
 
+#define DB_DATA_FOLDER "data_chunk"
+#define DB_PARITY_FOLDER "parity_chunk"
+
+
 extern struct fileinfo* st[HASH_VAL]; 
 
 void insert_data(long int unique_id,char *file_name,int file_size){
@@ -62,7 +66,7 @@ struct fileinfo* getnode(long int unique_ID){
 }
 
 
-long int findSize(char file_name[])
+long int get_file_size(char file_name[])
 {
 	// opening the file in read mode
        int fp = open(file_name, O_RDONLY);
@@ -82,9 +86,16 @@ long int findSize(char file_name[])
 	return size;
 }
 
-int get_chunk_size(float num){
-
-       return num <0?num-0.5:num+0.5;
+int get_chunk_size(int file_size, int no_of_data_chunk){
+       
+       int chunk_size;
+       
+       chunk_size = file_size/no_of_data_chunk;
+       
+       if(file_size % no_of_data_chunk){
+           chunk_size = chunk_size+1;
+       }
+       return chunk_size;
 }
 
 char* getFileNameFromPath(char* path, char c)
@@ -110,7 +121,7 @@ void get_storage(int no_of_d_chunk,int no_of_p_chunk){
             mkdir(fn,0777);
         }
         
-        for(int i=0;i<no_of_p_chunk;i++){
+        for(int i=1;i<=no_of_p_chunk;i++){
       	    sprintf(fn, "EC_Storage/parity_chunk_%d", i);
             mkdir(fn,0777);
         }
@@ -145,5 +156,45 @@ char* toLower(char* s) {
 }
 
 
+void clear_file_data(char* folder_path){
+
+       struct dirent *next_file;
+
+       DIR *theFolder = opendir(folder_path);
+       
+       if(theFolder){
+       char file_path[768];
+       
+       while ( (next_file = readdir(theFolder)) != NULL)
+       {
+        
+        // build the path for each file in the folder
+        sprintf(file_path, "%s/%s",folder_path,next_file->d_name);
+        unlink(file_path);
+        
+       } 
+       
+       closedir(theFolder);
+       }
+ 
+}
+
+
+void clear_dir(char* path){
+
+    char data_folder_path[512];
+    char parity_folder_path[512];
+    
+    for(int i=1;i<=4;i++){
+        
+       sprintf(data_folder_path,"%s/%s_%d",path,DB_DATA_FOLDER,i);
+       clear_file_data(data_folder_path);
+       
+       sprintf(parity_folder_path,"%s/%s_%d",path,DB_PARITY_FOLDER,i);
+       clear_file_data(parity_folder_path);  
+    }
+    
+   
+}
 
 

@@ -10,9 +10,18 @@
 #define LIST 2
 #define QUIT 3
 
+#define DB_ "EC_Storage"
 
 int main(){
-     
+      
+      /*for ( int I = 0; I<128 ; I++ ) { 
+          printf ("%d\t0x%x\t%c\n",I,I,I);
+      }
+      return 0;*/
+      
+      //clearing the databse
+      clear_dir(DB_);
+      
       // getting unique_ID
       long int unique_ID = 10000;
       long int unique_file_ID;
