@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include<dirent.h>
 #include "file_operation.h"
 #include "helper.h"
 
@@ -13,96 +14,100 @@
 #define DB_ "EC_Storage"
 
 int main(){
+
+	// getting unique_ID
+      	long int unique_ID = 10000;
+      	long int unique_file_ID;
+      	char file_path[100];
+      	char user_path[100];
+
+	// checking if EC_Storage directory present or not
+	DIR* storage = opendir("EC_Storage");
+    
+	if(storage){
+		//clearing the databse
+        	clear_dir(DB_);
+		
+	}
+	else{
+		get_storage(NO_OF_D_CHUNK,NO_OF_P_CHUNK);
+	}
+	
+      	while (1) {
       
-      /*for ( int I = 0; I<128 ; I++ ) { 
-          printf ("%d\t0x%x\t%c\n",I,I,I);
-      }
-      return 0;*/
+      	printf("ObjStorage >");
       
-      //clearing the databse
-      clear_dir(DB_);
+      	// to read command line with arguments
+      	char cmd[20];
+      	scanf("%s", cmd);
       
-      // getting unique_ID
-      long int unique_ID = 10000;
-      long int unique_file_ID;
-      char file_path[100];
-      char user_path[100];
+      	int a = readline(cmd);
       
-      while (1) {
-      
-      printf("ObjStorage >");
-      
-      // to read command line with arguments
-      char cmd[20];
-      scanf("%s", cmd);
-      
-      int a = readline(cmd);
-      
-      switch(a){
-         case PUT:
-         
-              // taking file path from user 
-			  scanf("%s",file_path);
+      	switch(a){
+		case PUT:
+               
+              		// taking file path from user 
+			scanf("%s",file_path);
 			  
-			  int n = put(unique_ID,file_path);
+			int n = put(unique_ID,file_path);
 			  
-			  if(n==0){
-				 printf("%ld\n",unique_ID);
-				 unique_ID++;
-			  }
-			  else if(n==4){
-				 printf("Nothing to read in file !!");
-			  }
-			  else if(n==5){
-				 printf("Storage is Full !!");
-			  }
-			  else{
-				 printf("File not found !!");
-			  }
+			if(n==0){
+				printf("%ld\n",unique_ID);
+				unique_ID++;
+			}
+			else if(n==4){
+				printf("Nothing to read in file !!");
+			}
+			else if(n==5){
+				printf("Storage is Full !!");
+			}
+			else{
+				printf("File not found !!");
+			}
 			  
-              break;
+              		break;
               
               
-         case GET:
+		case GET:
          
-               // taking unique_ID of file from user
-			   scanf("%ld",&unique_file_ID); 
+                	// taking unique_ID of file from user
+		 	scanf("%ld",&unique_file_ID); 
 			   
-			   // taking path of file from user where user wants to store file
-			   scanf("%s",user_path);
+			// taking path of file from user where user wants to store file
+			scanf("%s",user_path);
 			   
-			   int a = get(unique_file_ID, user_path);
+			int a = get(unique_file_ID, user_path);
 				   
-			   if (a==0){
-				      printf("Object retrieved successfully !!\n");
-			   }
-			   else if (a==1){
-				      printf("Chunk not found !!\n");
-			   }
-			   else if (a==2){
-				      printf("Object with ID %ld does not exist !!\n",unique_file_ID);
-			   }
+			if (a==0){
+				printf("Object retrieved successfully !!\n");
+			}
+			else if (a==1){
+				printf("Chunk not found !!\n");
+			}
+			else if (a==2){
+				printf("Object with ID %ld does not exist !!\n",unique_file_ID);
+			}
 			   
-               break;
+               	break;
                
                
-         case LIST:
+         	case LIST:
          
-              printf("unique_id       file name       filesize\n\n");
-              list();
-              break;
+              		printf("unique_id       file name       filesize\n\n");
+              		list();
+              		break;
               
-         case QUIT:
-             // clear EC_storage
-             // clear memory 
-             exit(0);
+         	case QUIT:
+             		// clear EC_storage
+             		// clear memory 
+             		exit(0);
               
-         default:
-            printf("\nInvalid command !!!\n\nfollow below pattern\n>put file_path\n>get unique_ID file path\n>list\n>quit\n");
-            break;
-      }
+         	default:
+            		printf("\nInvalid command !!!\n\nfollow below pattern\n>put file_path\n>get unique_ID file path\n>list\n>quit\n");
+            		break;
+      		}
       
-      printf("\n");
+      		printf("\n");
        
       }     
       

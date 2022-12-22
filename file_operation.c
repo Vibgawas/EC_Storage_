@@ -9,20 +9,7 @@
 #include <getopt.h>
 #include <isa-l.h>
 #include "helper.h"
-
-#define NO_OF_D_CHUNK 4  
-#define NO_OF_P_CHUNK 3
-#define STORAGE "EC_Storage"
-#define CHUNK "data_chunk"
-#define MAX_RECORDS 50
-
-// Error code
-#define SUCCESS 0
-#define CHUNK_NOT_FOUND 1
-#define FILE_DOES_NOT_EXIST 2
-#define FILE_NOT_FOUND 3
-#define FILE_IS_EMPTY 4
-#define STORAGE_IS_FULL 5
+#include "file_operation.h"
 
 #define MMAX 255
 
@@ -157,7 +144,8 @@ int put(long int file_ID, char* path){
 	    	
 	// Encoding data to generate parity 
 	encode(frag_ptrs, encode_matrix, g_tbls, fp, m, k, p, file_len);
-	    		
+	
+	   		
 	// Fill data chunks
     	for (i=0; i<k ; i++){
     	
@@ -302,7 +290,7 @@ int get(long int unique_f_ID,char* path){
       for(int i=1;i<=NO_OF_D_CHUNK;i++){
      
          // file where we store concatinated data
-         int op_file = open(path, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+         int op_file = open(path, O_APPEND|O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
          
          // getting path of file from unique_ID
          char f_path[80];
