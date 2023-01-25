@@ -2,10 +2,13 @@
 # define HASH_VAL 5 
 # define GET_HASH_INDEX(X)	((int)X % HASH_VAL) 
 
-#define DB_NAME "EC_Storage"
-#define DB_DATA_FOLDER "data_chunk"
-#define DB_PARITY_FOLDER "parity_chunk"
+#define DB_ "EC_Storage"
+#define CHUNK "_chunk"
 
+#define MMAX 255
+#define KMAX 255
+
+typedef unsigned char u8;
 
 struct fileinfo
 {
@@ -40,3 +43,14 @@ void display(struct fileinfo* node);
 void clear_dir(char* path);
 
 void clear_data(char* folder_path);
+
+int read_soloman(u8 **frag_ptrs,u8 **frag_ptrs1,u8 * frag_err_list,int nerrs,int k,int p,int len);
+
+static int gf_gen_decode_matrix_simple(u8 * encode_matrix,
+				       u8 * decode_matrix,
+				       u8 * invert_matrix,
+				       u8 * temp_matrix,
+				       u8 * decode_index,
+				       u8 * frag_err_list, int nerrs, int k, int m);
+				       
+				       

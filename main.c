@@ -11,7 +11,7 @@
 #define LIST 2
 #define QUIT 3
 
-#define DB_ "EC_Storage"
+
 
 int main(){
 
@@ -22,7 +22,7 @@ int main(){
       	char user_path[100];
 
 	// checking if EC_Storage directory present or not
-	DIR* storage = opendir("EC_Storage");
+	DIR* storage = opendir(DB_);
     
 	if(storage){
 		//clearing the databse

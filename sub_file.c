@@ -62,15 +62,7 @@ int put(long int file_ID, char* path){
         	return FILE_NOT_FOUND;
 	}
 	
-	// Allocate the src & parity buffers
-    	for (int i = 0; i < m; i++) {
-		if (NULL == (frag_ptrs[i] = malloc(len))) {
-			printf("alloc error: Fail\n");
-			for(int ii=0; ii<len ;ii++){
-	    			frag_ptrs[i][ii] = 0 ;
-			}		
-        	}
-    	}
+	
     	
 	// calculating file size
 	file_len = get_file_size(path);
@@ -83,6 +75,16 @@ int put(long int file_ID, char* path){
 	    	
 	// calculating chunk size 
 	rem_len = len = get_chunk_size(file_len-1,k);
+	
+	// Allocate the src & parity buffers
+    	for (int i = 0; i < m; i++) {
+		if (NULL == (frag_ptrs[i] = malloc(len))) {
+			printf("alloc error: Fail\n");
+			for(int ii=0; ii<len ;ii++){
+	    			frag_ptrs[i][ii] = 0 ;
+			}		
+        	}
+    	}
 	    	
     	// Fill sources
     	for (i=0; i<k ; i++) {
@@ -107,13 +109,14 @@ int put(long int file_ID, char* path){
 	
 	// Generate EC parity blocks from sources
 	ec_encode_data(len, k, p, g_tbls, frag_ptrs, &frag_ptrs[k]);
-		   		
+		   	
+	rem_len = len;	
 	// Fill data chunks
     	for (i=0; i<k ; i++){
     		if(i==k-1){
     			rem_len = ((file_len-1)-(len*(k-1)));
     		}
-    		sprintf(chunk_name, "EC_Storage/_chunk_%d/_%ld_",i+1,file_ID);
+    		sprintf(chunk_name, "%s/%s_%d/_%ld_",DB_,CHUNK,i+1,file_ID);
     		
 		// Opening the file in create and write mode
 		int fp2 = open(chunk_name, O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
@@ -126,7 +129,7 @@ int put(long int file_ID, char* path){
    		
    	// Fill parity chunks
     	for (i=k; i<m ; i++) {
-    		sprintf(chunk_name, "EC_Storage/_chunk_%d/_%ld_",i+1,file_ID);
+    		sprintf(chunk_name, "%s/%s_%d/_%ld_",DB_,CHUNK,i+1,file_ID);
     		
 		// Opening the file in create and write mode
 		int fp2 = open(chunk_name, O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
@@ -145,17 +148,28 @@ int put(long int file_ID, char* path){
         // storing file data into structure 
         insert_data(file_ID,file_name,file_len);
         
+        printf("len : %d\n",len);
+	printf("After data put : \n");
+	printf("**************** frag_MATRIX (frag_ptrs1)****************\n");	    
+	for (i=0; i<m; i++) {		    
+		for (j=0; j<4 ; j++){
+			printf("%u ",frag_ptrs[i][j]);   
+		}		       
+		printf("\n");
+	}
+        
         return 0;	
 	
 }
 
 int get(long int unique_f_ID,char* path){
 	
-	int i,j,m,ret,op_file,fp1,nerrs;
+	int i,j,m,ret,op_file,fp1,nerrs,len,rem_len;
 	int k= NO_OF_D_CHUNK, p=NO_OF_P_CHUNK;
-	long int file_len,len=3*1024;
+	//int len=8*1024;
+	long int file_len;
 	unsigned char ch;
-	char f_path[80];
+	char f_path[200];
 	
 	struct fileinfo* data_node;
     	data_node = getnode(unique_f_ID);
@@ -174,72 +188,96 @@ int get(long int unique_f_ID,char* path){
     		return FILE_DOES_NOT_EXIST;
 	}
 	
-	// Allocate the src & parity buffers
-    	for (int i = 0; i < m; i++) {
+	// getting total file_size from database
+	file_len = data_node->file_size;
+	
+	// calculating chunk size 
+	rem_len = len = get_chunk_size(file_len-1,k);
+	
+	// Allocate the src & parity buffers to frag_ptrs1
+    	for (i = 0; i < m; i++) {
 		if (NULL == (frag_ptrs1[i] = malloc(len))) {
 			printf("alloc error: Fail\n");
-			for(int ii=0; ii<len ;ii++){
+			for(int ii=0; ii<len;ii++){
 	    			frag_ptrs1[i][ii] = 0 ;
+	    			
 			}		
         	}
     	}
 
-      	for(int i=0;i<7;i++){
+	// Allocate the src & parity buffers to frag_ptrs
+	for (i = 0; i < m; i++) {
+		if (NULL == (frag_ptrs[i] = malloc(len))) {
+			printf("alloc error: Fail\n");
+			for(int ii=0; ii<len;ii++){
+	    			frag_ptrs[i][ii] = 0 ;
+	    			
+			}		
+        	}
+    	}
+    	
+	//int chunk_1_size = 0;
+	
+	//printf("\nlen : %d\n",len);
+      	for(i=0;i<m;i++){
+      		
          	// getting path of file from unique_ID
-         	sprintf(f_path, "%s/_%s_%d/_%ld_",STORAGE,CHUNK,i+1,unique_f_ID);
+         	sprintf(f_path, "%s/%s_%d/_%ld_",DB_, CHUNK, i+1, unique_f_ID);
                
          	// opening the file
         	fp1 = open(f_path,O_RDONLY);
         	
-        	
-        		
+        	if(i==k-1){
+    			rem_len = ((file_len-1)-(len*(k-1)));
+    		}
+	        //printf("\ni : %d \t rem_len : %d\n",i,rem_len);
          	//char ch;
-         	
          	if(fp1!=-1){
-         	
+         		
          		// calculating file size
-			len = get_file_size(f_path);
+			//len = get_file_size(f_path);
 			
-			if (NULL == (frag_ptrs[i] = malloc(len))) {
+			
+			//printf("\nlen : %d\n",len);
+			
+			
+    			
+			/*if (NULL == (frag_ptrs[i] = malloc(rem_len))) {
 				printf("alloc error: Fail\n");
-				for(int ii=0; ii<len ;ii++){
+				for(int ii=0; ii<rem_len ;ii++){
 	    				frag_ptrs[i-nerrs][ii] = 0 ;
 				}		
-        		}
-        		for (j=0; j<len ; j++){	      
+        		}*/
+
+        		for (j=0; j<rem_len ; j++){	      
 	              		if(read( fp1, &ch ,1 ) == 1){
 			   		frag_ptrs[i-nerrs][j] = ch;
 			   		frag_ptrs1[i][j] = ch;
 		      		}
-		      		else{
-		      			break;
-		      		}		 
+		      				 
                 	} 
                 	
                 	
-        		
-        		
-        		
+			
+			
    	  		// closing the file
  	  		close(fp1);
     	  	} 
     	  	else{
-    	  		if (NULL == (frag_ptrs1[i] = malloc(len))) {
+    	  		/*if (NULL == (frag_ptrs1[i] = malloc(len))) {
 				printf("alloc error: Fail\n");
 				for(int ii=0; ii<len ;ii++){
 	    				frag_ptrs1[i][ii] = 0 ;
 				}		
-        		}
-        		for (j=0; j<len ; j++){	      
-			   	frag_ptrs1[i][j] = 0;			 
-                	} 
+        		}*/
+        		
                 	
-    	  		if (NULL == (frag_ptrs[i] = malloc(len))) {
+    	  		/*if (NULL == (frag_ptrs[i] = malloc(len))) {
 				printf("alloc error: Fail\n");
 				for(int ii=0; ii<len ;ii++){
 	    				frag_ptrs[i][ii] = 0 ;
 				}		
-        		}
+        		}*/
         		
     	  		frag_err_list[nerrs] = i;
     	  		nerrs++;
@@ -247,46 +285,125 @@ int get(long int unique_f_ID,char* path){
     	     		//return CHUNK_NOT_FOUND;
     	     		//break;
     	  	}
+    	  	rem_len = len;
 	}
 	
+	/*printf("\nlen : %d\n",len);
 	printf("*********frag_err_list********\n");
         for(int iii = 0;iii<8;iii++){
         	printf("%u ",frag_err_list[iii]);
         }
         printf("\n");
 	printf("**************** frag_MATRIX ****************\n");	    
-	for (i=0; i<7; i++) {		    
-		for (j=0; j<4 ; j++){
+	for (i=0; i<m; i++) {		    
+		for (j=0; j<k ; j++){
+			printf("%u ",frag_ptrs[i][j]);   
+		}		       
+		printf("\n");
+	}*/
+	printf("\n");
+	printf("No of missing chunks : %d\n",nerrs);
+	
+	printf("\n");
+	printf("**************** frag_MATRIX (frag_ptrs) ****************\n");	    
+	for (i=0; i<m-nerrs; i++) {		    
+		for (j=0; j<len ; j++){
 			printf("%u ",frag_ptrs[i][j]);   
 		}		       
 		printf("\n");
 	}
 	
+	printf("\n");
+	printf("**************** frag_MATRIX (frag_ptrs1) ****************\n");	    
+	for (i=0; i<m; i++) {		    
+		for (j=0; j<len ; j++){
+			printf("%u ",frag_ptrs1[i][j]);   
+		}		       
+		printf("\n");
+	}
+		
+	if(nerrs!=0){
+		printf("\nRead_soloman\n");
+		read_soloman(frag_ptrs,frag_ptrs1,frag_err_list,nerrs,k,p,len);
+	}	
+	
 	// concatinating user path and file_name extracted from database( structure ) 
       	strcat(path,"/");
       	strcat(path,data_node->file_name);
       	
-	// file where we store concatinated data
+	// opening file to store concatinated data
 	op_file = open(path, O_APPEND|O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 	
-	if(nerrs==0){		
+	if(!op_file){
+		printf("Directory does not exist !!");
+	}
+
+	// concatinating data chunks
+    	for (i=0; i<k ; i++) {
+    		if(i==k-1){
+    			rem_len = ((file_len-1)-(len*(k-1)));
+    		}
+		write(op_file,frag_ptrs1[i], rem_len);  	            			     
+	}
+		
+	// closing the file
+	close(op_file);
+	return SUCCESS;
+	
+	
+	/*//char c;
+	//printf("\nlen : %d\n",len);
+	if(nerrs==0){	
+		
+		// Fill data chunks
+    		for (i=0; i<k ; i++) {
+    			if(i==k-1){
+    				rem_len = ((file_len-1)-(len*(k-1)));
+    			}
+			write(op_file,frag_ptrs[i], rem_len);  	            			     
+		}
+		
+		// closing the file
+		close(op_file);
+		return SUCCESS;	
+	}
+	else{
+		
+		printf("\nread_soloman\n");
+		
+		
+		read_soloman(frag_ptrs,frag_ptrs1,frag_err_list,nerrs,k,p,len);
+		
+		
 		// Fill parity chunks
-    		for (i=0; i<4 ; i++) {
-			for (j=0; j<4 ; j++){	      
-		    		write(op_file,&frag_ptrs[i][j], 1);
+    		for (i=0; i<k ; i++) {
+    			/*int j=0;
+    			while(j>=0)
+    			{
+    				if(frag_ptrs1[i][j]!=NULL){
+					write(op_file,&frag_ptrs1[i][j], 1);
+					j++;
+
+				}
+				else{
+					break;
+				}
+				
+    			}*/
+			/*for (j=0; j<4 ; j++){
+				if(frag_ptrs1[i][j]!=NULL){
+					write(op_file,&frag_ptrs1[i][j], 1);
+
+				}
                 	}               			       
 		}
 		
 		// closing the file
-		close(op_file);	
-	}
-	else{
-		printf("read_soloman\n");
-		
-		read_soloman(frag_ptrs,frag_ptrs1,frag_err_list,nerrs,4,3,len);
-	}
-	printf("hiii");
-	return SUCCESS;
+		close(op_file);
+		return SUCCESS;*/
+	//}
+	
+	
 }
 
 
@@ -341,29 +458,32 @@ int read_soloman(u8 **frag_ptrs,u8 **frag_ptrs1,u8 * frag_err_list,int nerrs,int
 					  frag_err_list, nerrs, k, m);
 					  
 	
-	printf("*********decode_index********\n");
+	/*printf("*********decode_index********\n");
         for(int iii = 0;iii<8;iii++){
         	printf("%u ",decode_index[iii]);
-        }
+        }*/
 					  
 	// Pack recovery array pointers as list of valid fragments
 	for (i = 0; i < k; i++)
 		recover_srcs[i] = frag_ptrs1[decode_index[i]];
 	
-	printf("**************** recover_SRCS_MATRIX ****************\n");	    
+	/*printf("**************** recover_SRCS_MATRIX ****************\n");	    
 	for (i=0; i<k ; i++) {		    
 		for (j=0; j<len ; j++){
 			printf("%u ",recover_srcs[i][j]);   
 		}		       
 		printf("\n");
-	}
+	}*/
 		
 	// Recover data
 	ec_init_tables(k, nerrs, decode_matrix, g_tbls);
 	
 	ec_encode_data(len, k, nerrs, g_tbls, recover_srcs, recover_outp);
 	
-	printf("**************** recover_OUTP_MATRIX ****************\n");	    
+	
+	
+	
+	/*printf("**************** recover_OUTP_MATRIX ****************\n");	    
 	for (i=0; i<p ; i++) {		    
 		for (j=0; j<4 ; j++){
 			printf("%u ",recover_outp[i][j]);   
@@ -375,12 +495,12 @@ int read_soloman(u8 **frag_ptrs,u8 **frag_ptrs1,u8 * frag_err_list,int nerrs,int
         for(int iii = 0;iii<8;iii++){
         	printf("%u ",frag_err_list[iii]);
         }
-        printf("\n");
+        printf("\n");*/
 	
 	int index= 0;
 	for(i=0;i<m;i++){
 		if(frag_err_list[index]==i){
-			printf("in");
+			
 			for(int k=0;k<len;k++){
 				frag_ptrs1[i][k]=recover_outp[index][k];
 		
@@ -389,13 +509,17 @@ int read_soloman(u8 **frag_ptrs,u8 **frag_ptrs1,u8 * frag_err_list,int nerrs,int
 		}
 		
 	}
-	printf("**************** frag_MATRIX ****************\n");	    
-	for (i=0; i<7; i++) {		    
-		for (j=0; j<4 ; j++){
+	printf("\n");
+	printf("After data recovery : \n");
+	printf("**************** frag_MATRIX (frag_ptrs1)****************\n");	    
+	for (i=0; i<m; i++) {		    
+		for (j=0; j<len ; j++){
 			printf("%u ",frag_ptrs1[i][j]);   
 		}		       
 		printf("\n");
 	}
+	
+	
 	return SUCCESS;
 	
 }
@@ -429,25 +553,25 @@ static int gf_gen_decode_matrix_simple(u8 * encode_matrix,
 		decode_index[i] = r;
 	}
 	
-	printf("***************** b_Matrix ***************\n");
+	/*printf("***************** b_Matrix ***************\n");
 	for (int ii=0; ii< (m*k) ;){
 		for (int jj=0;jj< k ;jj++, ii++){
 			printf("%u ",b[ii]);
 		}
 		printf("\n");
-	}
+	}*/
 	
 	// Invert matrix to get recovery matrix
 	if (gf_invert_matrix(b, invert_matrix, k) < 0)
 		return -1;
 	
-	printf("*************gf_invert_matrix************\n");
+	/*printf("*************gf_invert_matrix************\n");
 	for (int ii=0; ii< (m*k) ;){
 		for (int jj=0;jj< k ;jj++, ii++){
 			printf("%u ",invert_matrix[ii]);
 		}
 		printf("\n");
-	}
+	}*/
 	
 	// Get decode matrix with only wanted recovery rows
 	for (i = 0; i < nerrs; i++) {
@@ -471,7 +595,7 @@ static int gf_gen_decode_matrix_simple(u8 * encode_matrix,
 		}
 	}
 	
-	printf("*************encode matrix************\n");
+	/*printf("*************encode matrix************\n");
 	for (int ii=0; ii< (m*k) ;){
 		for (int jj=0;jj< k ;jj++, ii++){
 			printf("%u ",encode_matrix[ii]);
@@ -492,7 +616,7 @@ static int gf_gen_decode_matrix_simple(u8 * encode_matrix,
 			printf("%u ",b[ii]);
 		}
 		printf("\n");
-	}
+	}*/
 	return 0;
 }
 
@@ -503,7 +627,7 @@ void list(){
 	for(int i=0;i<HASH_VAL;i++){
         	node = st[i];
         	while(node!=NULL){
-        		printf("0x%x\n",node);
+        		//printf("0x%x\n",node);
 			display(node);
                 	node = node->next;
             	}      

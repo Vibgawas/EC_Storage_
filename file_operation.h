@@ -1,7 +1,5 @@
 #define NO_OF_D_CHUNK 4  
 #define NO_OF_P_CHUNK 3
-#define STORAGE "EC_Storage"
-#define CHUNK "data_chunk"
 #define MAX_RECORDS 50
 
 // Error code
