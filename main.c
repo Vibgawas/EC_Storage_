@@ -24,14 +24,19 @@ int main(){
 	// checking if EC_Storage directory present or not
 	DIR* storage = opendir(DB_);
     
-	if(storage){
+	//if(storage){
 		//clearing the databse
-        	clear_dir(DB_);
+        	//clear_dir(DB_);
 		
-	}
-	else{
+	//}
+	//else{
 		get_storage(NO_OF_D_CHUNK,NO_OF_P_CHUNK);
-	}
+	//}
+	
+	//print no_of_d_chunk and p_chunk and path of storage
+	printf("No of data chunks : %d \n",NO_OF_D_CHUNK);
+	printf("No of parity chunks : %d \n",NO_OF_P_CHUNK);
+	printf("Name of Storage : %s\n",DB_);
 	
       	while (1) {
       

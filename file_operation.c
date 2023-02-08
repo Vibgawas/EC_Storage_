@@ -12,7 +12,7 @@
 #include "file_operation.h"
 
 
-
+// typedef char u8;
 typedef unsigned char u8;
 
 struct fileinfo* st[HASH_VAL];
@@ -46,7 +46,7 @@ int put(long int file_ID, char* path){
 	}
 
 	fp = open(path,O_RDONLY);
-	if(!fp){
+	if(fp==-1){
         	return FILE_NOT_FOUND;
 	}
 	
@@ -79,8 +79,9 @@ int put(long int file_ID, char* path){
     	        if(i==k-1){
     			rem_len = (file_len-1) - ((k-1)*len);
     		}
-		for (j=0; j<rem_len ; j++){	      
-	              	if(read( fp, &ch ,1 ) == 1){
+		for (j=0; j<rem_len ; j++){
+				      
+	              	if(read( fp, &ch ,1 ) == 1 ){
 			   	frag_ptrs[i][j] = ch;
 		      	}
 		      	else{
@@ -92,13 +93,93 @@ int put(long int file_ID, char* path){
 	// Pick an encode matrix.
     	gf_gen_cauchy1_matrix(encode_matrix, m, k);
     	
+    	printf("gf_gen_cauchy_matrix\n");
+    	
+    	printf("************* encode matrix ************\n");
+	for (int ii=0; ii< (m*k) ;){
+		for (int jj=0;jj< k ;jj++, ii++){
+			printf("%u ",encode_matrix[ii]);
+		}
+		printf("\n");
+	}
+	
+	printf("**************** frag_MATRIX ****************\n");	    
+	for (i=0; i<m ; i++) {		    
+		for (j=0; j<len ; j++){
+			printf("%u ",frag_ptrs[i][j]);   
+		}		       
+		printf("\n");
+	}
+	
+    	printf("***************** g_tbls ***************\n");
+    	for (int ii=0; ii< (k*p) ; ){
+       	for (int jj=0; jj< k ; jj++, ii++){
+          	printf("%u ",g_tbls[ii]);
+       	}
+       	printf("\n");
+    	}
+    	
+    	
     	// Initialize g_tbls from encode matrix
 	ec_init_tables(k, p, &encode_matrix[k * k], g_tbls);
 	
+	printf("ec_init_tabels\n");
+    	
+    	printf("************* encode matrix ************\n");
+	for (int ii=0; ii< (m*k) ;){
+		for (int jj=0;jj< k ;jj++, ii++){
+			printf("%u ",encode_matrix[ii]);
+		}
+		printf("\n");
+	}
+	
+	printf("**************** frag_MATRIX ****************\n");	    
+	for (i=0; i<m ; i++) {		    
+		for (j=0; j<len ; j++){
+			printf("%u ",frag_ptrs[i][j]);   
+		}		       
+		printf("\n");
+	}
+	
+    	printf("***************** g_tbls ***************\n");
+    	for (int ii=0; ii< (k*p) ; ){
+       	for (int jj=0; jj< k ; jj++, ii++){
+          	printf("%u ",g_tbls[ii]);
+       	}
+       	printf("\n");
+    	}
+	
 	// Generate EC parity blocks from sources
 	ec_encode_data(len, k, p, g_tbls, frag_ptrs, &frag_ptrs[k]);
+	
+	printf("ec_encode_data\n");
+    	
+    	printf("************* encode matrix ************\n");
+	for (int ii=0; ii< (m*k) ;){
+		for (int jj=0;jj< k ;jj++, ii++){
+			printf("%u ",encode_matrix[ii]);
+		}
+		printf("\n");
+	}
+	
+	printf("**************** frag_MATRIX ****************\n");	    
+	for (i=0; i<m ; i++) {		    
+		for (j=0; j<len ; j++){
+			printf("%u ",frag_ptrs[i][j]);   
+		}		       
+		printf("\n");
+	}
+	
+    	printf("***************** g_tbls ***************\n");
+    	for (int ii=0; ii< (k*p) ; ){
+       	for (int jj=0; jj< k ; jj++, ii++){
+          	printf("%u ",g_tbls[ii]);
+       	}
+       	printf("\n");
+    	}
 		   	
 	rem_len = len;	
+	
 	// Fill data chunks
     	for (i=0; i<k ; i++){
     		if(i==k-1){
@@ -235,10 +316,22 @@ int get(long int unique_f_ID,char* path){
     	  	}
     	  	rem_len = len;
 	}
-		
+	
+	
+	printf("**************** frag_ptrs1 ****************\n");	    
+	for (i=0; i<m ; i++) {		    
+		for (j=0; j<len ; j++){
+			printf("%u ",frag_ptrs1[i][j]);   
+		}		       
+		printf("\n");
+	}
+	printf("\n");
+	
+	
 	if(nerrs!=0){
 		printf("\nRead_soloman\n");
-		read_soloman(frag_ptrs,frag_ptrs1,frag_err_list,nerrs,k,p,len);
+		read_soloman(frag_ptrs,frag_ptrs1,frag_err_list,nerrs,k,p,len); 
+	
 	}	
 
 	// concatinating data chunks
@@ -250,6 +343,7 @@ int get(long int unique_f_ID,char* path){
 	}	
 	// closing the file
 	close(op_file);
+	
 	
 	return SUCCESS;
 	

@@ -1,4 +1,4 @@
-#define NO_OF_D_CHUNK 4  
+#define NO_OF_D_CHUNK 8 
 #define NO_OF_P_CHUNK 3
 #define MAX_RECORDS 50
 

@@ -281,13 +281,23 @@ int read_soloman(u8 **frag_ptrs,u8 **frag_ptrs1,u8 * frag_err_list,int nerrs,int
 	
 	printf("\n");
 	printf("After data recovery : \n");
-	printf("**************** frag_MATRIX (frag_ptrs1)****************\n");	    
+	printf("**************** frag_ptrs1 ****************\n");	    
 	for (i=0; i<m; i++) {		    
 		for (j=0; j<len ; j++){
 			printf("%u ",frag_ptrs1[i][j]);   
 		}		       
 		printf("\n");
 	}
+	
+	printf("\ncheck recovery of block {");
+	for (i = 0; i < nerrs; i++) {
+		printf(" %d", frag_err_list[i]);
+		if (memcmp(recover_outp[i], frag_ptrs1[frag_err_list[i]], len)) {
+			printf(" Fail erasure recovery %d, frag %d\n", i, frag_err_list[i]);
+			return -1;
+		}
+	}
+	printf(" } done all: Pass\n");
 	
 	return SUCCESS;	
 }
@@ -313,6 +323,12 @@ static int gf_gen_decode_matrix_simple(u8 * encode_matrix,
 		frag_in_err[frag_err_list[i]] = 1;
 	}
 	
+	printf("*********frag_err_list********\n");
+        for(int iii = 0;iii<nerrs;iii++){
+        	printf("%u ",frag_err_list[iii]);
+        }
+        printf("\n");
+	
 	// Construct b (matrix that encoded remaining frags) by removing erased rows
 	for (i = 0, r = 0; i < k; i++, r++) {
 		while (frag_in_err[r])
@@ -322,9 +338,25 @@ static int gf_gen_decode_matrix_simple(u8 * encode_matrix,
 		decode_index[i] = r;
 	}
 	
+	printf("***************** b_Matrix ***************\n");
+	for (int ii=0; ii< (m*k) ;){
+		for (int jj=0;jj< k ;jj++, ii++){
+			printf("%u ",b[ii]);
+		}
+		printf("\n");
+	}
+	
 	// Invert matrix to get recovery matrix
 	if (gf_invert_matrix(b, invert_matrix, k) < 0)
 		return -1;
+	
+	printf("************* invert_matrix ************\n");
+	for (int ii=0; ii< (m*k) ;){
+		for (int jj=0;jj< k ;jj++, ii++){
+			printf("%u ",invert_matrix[ii]);
+		}
+		printf("\n");
+	}
 	
 	// Get decode matrix with only wanted recovery rows
 	for (i = 0; i < nerrs; i++) {
@@ -333,6 +365,8 @@ static int gf_gen_decode_matrix_simple(u8 * encode_matrix,
 				decode_matrix[k * i + j] =
 				    invert_matrix[k * frag_err_list[i] + j];
 	}
+	
+	
 	
 	// For non-src (parity) erasures need to multiply encode matrix * invert
 	for (p = 0; p < nerrs; p++) {
@@ -346,6 +380,14 @@ static int gf_gen_decode_matrix_simple(u8 * encode_matrix,
 				decode_matrix[k * p + i] = s;
 			}
 		}
+	}
+	
+	printf("*************decode matrix************\n");
+	for (int ii=0; ii< nerrs ;){
+		for (int jj=0;jj< k ;jj++, ii++){
+			printf("%u ",decode_matrix[ii]);
+		}
+		printf("\n");
 	}
 	return 0;
 }
